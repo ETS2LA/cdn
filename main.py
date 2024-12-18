@@ -1,8 +1,10 @@
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi import UploadFile, File
+import asyncio
 import fastapi
 import uvicorn
+import models
 
 import datasets
 datasets.Start()
@@ -23,6 +25,8 @@ app.add_middleware(
 @app.get("/")
 async def root():
     return HTMLResponse(content="<p>Hi! I don't know why you're here, but if you are looking for the source then check out the <a href='https://github.com/ETS2LA/cdn'>github repository</a>.</p>")
+
+# MARK: Datasets
 
 @app.post('/datasets/{author}/{dataset}/upload/{id}')
 async def upload_to_dataset(author: str, dataset: str, id, files: list[UploadFile] = File(...)):
@@ -69,7 +73,34 @@ async def get_dataset_id(author: str, dataset: str, id):
         return datasets.DeleteByID(author, dataset, id)
     else:
         return {'error': 'Dataset or author not found.'}
-    
+
+# MARK: Models
+
+async def slow_streamer(file_path: str, chunk_size: int, delay: float):
+    with open(file_path, "rb") as file:
+        while chunk := file.read(chunk_size):
+            yield chunk
+            await asyncio.sleep(delay)
+
+@app.get('/models/{author}/{model}')
+def return_model(author: str, model: str):
+    if models.IsAvailable(author, model):
+        return {'success': models.GetName(author, model)}
+    else:
+        return {'error': 'Model or author not found.'}
+
+@app.get('/models/{author}/{model}/download')
+def return_model(author: str, model: str):
+    if models.IsAvailable(author, model):
+        file_path = f'./models/{author}/{model}/{models.GetName(author, model)}'
+        chunk_size = 1024  # 1 KB chunks
+        speed_limit_kbps = 100  # 100 KB/s
+        delay = chunk_size / (speed_limit_kbps * 1024)  # Delay in seconds
+        return StreamingResponse(slow_streamer(file_path, chunk_size, delay), media_type="application/octet-stream")
+    else:
+        return {'error': 'Model or author not found.'}
+
+# MARK: Run    
     
 @app.get('/heartbeat')
 def heartbeat():

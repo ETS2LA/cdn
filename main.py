@@ -8,7 +8,7 @@ import datasets
 datasets.Start()
 
 
-DEVELOPMENT = True
+DEVELOPMENT = False
 
 
 app = fastapi.FastAPI()

@@ -1,4 +1,5 @@
 python-multipart
 beautifulsoup4
+requests
 uvicorn
 fastapi

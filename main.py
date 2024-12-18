@@ -1,13 +1,14 @@
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile, File
+import datasets
 import asyncio
 import fastapi
 import uvicorn
 import models
 
-import datasets
 datasets.Start()
+models.Start()
 
 
 DEVELOPMENT = False

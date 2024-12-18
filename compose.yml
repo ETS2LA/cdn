@@ -2,10 +2,10 @@ version: '3.8'
 
 services:
   app:
+    container_name: ets2la-cdn
     build:
       context: .
       dockerfile: Dockerfile
-      container_name: ets2la-cdn
     ports:
       - "9982:8000"
     volumes:

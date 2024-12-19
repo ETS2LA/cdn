@@ -140,7 +140,6 @@ def DeleteByID(Author, Dataset, ID):
 def Upload(Author, Dataset, ID, Files):
     try:
         if os.path.exists(f"{PATH}{Author}/{Dataset}"):
-            print(Files, type(Files))
             for File in Files:
                 with open(f"{PATH}{Author}/{Dataset}#IDs/{ID}.txt", "a") as F:
                     F.write(File.filename + ";")

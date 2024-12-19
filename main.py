@@ -2,7 +2,6 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile, File
 import datasets
-import asyncio
 import fastapi
 import uvicorn
 import models
@@ -77,12 +76,6 @@ async def get_dataset_id(author: str, dataset: str, id):
 
 # MARK: Models
 
-async def slow_streamer(file_path: str, chunk_size: int, delay: float):
-    with open(file_path, "rb") as file:
-        while chunk := file.read(chunk_size):
-            yield chunk
-            await asyncio.sleep(delay)
-
 @app.get('/models/{author}/{model}')
 def return_model(author: str, model: str):
     if models.IsAvailable(author, model):
@@ -93,11 +86,9 @@ def return_model(author: str, model: str):
 @app.get('/models/{author}/{model}/download')
 def return_model(author: str, model: str):
     if models.IsAvailable(author, model):
+        content_length = str(models.GetSize(author, model))
         file_path = f'./models/{author}/{model}/{models.GetName(author, model)}'
-        chunk_size = 1024  # 1 KB chunks
-        speed_limit_kbps = 100  # 100 KB/s
-        delay = chunk_size / (speed_limit_kbps * 1024)  # Delay in seconds
-        return StreamingResponse(slow_streamer(file_path, chunk_size, delay), media_type="application/octet-stream")
+        return StreamingResponse(models.LimitedStreamer(file_path=file_path, chunk_size=1024, speed_limit_kbps=100), media_type="application/octet-stream", headers={"content-length": content_length})
     else:
         return {'error': 'Model or author not found.'}
 

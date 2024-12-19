@@ -145,7 +145,6 @@ def Upload(Author, Dataset, ID, Files):
                 with open(f"{PATH}{Author}/{Dataset}#IDs/{ID}.txt", "a") as F:
                     F.write(File.filename + ";")
                 FileExtension = str(File.filename).split('.')[-1]
-                # save the file in the correct extension in the dataset
                 if FileExtension == "png" or FileExtension == "jpg" or FileExtension == "jpeg":
                     with open(f"{PATH}{Author}/{Dataset}/{File.filename}", "wb") as F:
                         F.write(File.file.read())

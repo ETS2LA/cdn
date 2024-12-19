@@ -80,7 +80,7 @@ def GetDataset(Author, Dataset):
                 for File in os.listdir(f"{PATH}{Author}/{Dataset}"):
                     if File.endswith(".png") or File.endswith(".jpg") or File.endswith(".jpeg") or File.endswith(".txt") or File.endswith(".json"):
                         zip.write(f"{PATH}{Author}/{Dataset}/{File}", File)
-            return fastapi.responses.FileResponse(path=f"{PATH}{Dataset}.zip", filename=f"{Dataset} - {datetime.datetime.now().strftime('%d.%m.%Y %H-%M-%S')}.zip")
+            return fastapi.responses.FileResponse(path=f"{PATH}{Dataset}.zip", filename=f"{Author} - {Dataset} - {datetime.datetime.now().strftime('%d.%m.%Y %H-%M-%S')}.zip")
         else:
             return {"error": "Dataset or author not found."}
     except:

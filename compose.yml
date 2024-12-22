@@ -9,8 +9,8 @@ services:
     ports:
       - "9982:8000"
     volumes:
-      - /mnt/sdb3/ets2la-cdn/datasets:/datasets
-      - /mnt/sdb3/ets2la-cdn/models:/models
+      - /mnt/sdb3/ets2la-cdn/datasets:/app/datasets
+      - /mnt/sdb3/ets2la-cdn/models:/app/models
     healthcheck:
       test: ["CMD", "curl", "-f", "https://cdn.ets2la.com/heartbeat"]
       interval: 5m

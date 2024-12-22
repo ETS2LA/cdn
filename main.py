@@ -76,19 +76,19 @@ async def get_dataset_id(author: str, dataset: str, id):
 
 # MARK: Models
 
-@app.get('/models/{author}/{model}')
-def return_model(author: str, model: str):
-    if models.IsAvailable(author, model):
-        return {'success': models.GetName(author, model)}
+@app.get('/models/{author}/{model}/{folder}')
+def return_model(author: str, model: str, folder: str):
+    if models.IsAvailable(author, model, folder):
+        return {'success': models.GetName(author, model, folder)}
     else:
         return {'error': 'Model or author not found.'}
 
-@app.get('/models/{author}/{model}/download')
-def return_model(author: str, model: str):
-    if models.IsAvailable(author, model):
-        content_length = str(models.GetSize(author, model))
-        file_path = f'./models/{author}/{model}/{models.GetName(author, model)}'
-        return StreamingResponse(models.LimitedStreamer(file_path=file_path, chunk_size=1024, speed_limit_kbps=100), media_type="application/octet-stream", headers={"content-length": content_length})
+@app.get('/models/{author}/{model}/{folder}/download')
+def return_model(author: str, model: str, folder: str):
+    if models.IsAvailable(author, model, folder):
+        content_length = str(models.GetSize(author, model, folder))
+        file_path = f'./models/{author}/{model}/{models.GetName(author, model, folder)}'
+        return StreamingResponse(models.LimitedStreamer(FilePath=file_path, ChunkSize=1024, SpeedLimitKbps=100), media_type="application/octet-stream", headers={"content-length": content_length})
     else:
         return {'error': 'Model or author not found.'}
 

@@ -13,12 +13,13 @@ DARK_GREY = "\033[90m"
 NORMAL = "\033[0m"
 
 
+# MODELS = {Huggingface User: {Repository: Folder which contains the model file}}
 MODELS = {
     "Glas42": {
-        "End-To-End",
-        "NavigationDetectionAI",
-        "TrafficLightDetectionAI",
-        "RouteAdvisorClassification"
+        "End-To-End": "model",
+        "NavigationDetectionAI": "model",
+        "TrafficLightDetectionAI": "model",
+        "RouteAdvisorClassification": "model"
     }
 }
 
@@ -49,51 +50,51 @@ def RunThread():
                         Response = None
 
                     if Response == 200:
-                        print(DARK_GREY + f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: {Author}/{Model}] " + NORMAL + "Checking for model updates...")
+                        print(DARK_GREY + f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: {Author}/{Model}/{MODELS[Author][Model]}] " + NORMAL + "Checking for model updates...")
 
-                        Url = f'https://huggingface.co/{Author}/{Model}/tree/main/model'
+                        Url = f'https://huggingface.co/{Author}/{Model}/tree/main/{MODELS[Author][Model]}'
                         Response = requests.get(Url)
                         Soup = BeautifulSoup(Response.content, 'html.parser')
 
                         LatestModel = None
                         for Link in Soup.find_all("a", href=True):
                             HREF = Link["href"]
-                            if HREF.startswith(f'/{Author}/{Model}/blob/main/model'):
+                            if HREF.startswith(f'/{Author}/{Model}/blob/main/{MODELS[Author][Model]}'):
                                 LatestModel = HREF.split("/")[-1]
                                 break
 
-                        CurrentModel = GetName(Author, Model)
+                        CurrentModel = GetName(Author, Model, MODELS[Author][Model])
 
                         if str(LatestModel) != str(CurrentModel):
-                            UPDATING.append(f"{Author}/{Model}")
-                            print(DARK_GREY + f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: {Author}/{Model}] " + NORMAL + "Updating the model...")
-                            Delete(Author, Model)
-                            Response = requests.get(f'https://huggingface.co/{Author}/{Model}/resolve/main/model/{LatestModel}?download=true', stream=True)
-                            with open(os.path.join(f"{PATH}{Author}/{Model}", f"{LatestModel}"), "wb") as ModelFile:
+                            UPDATING.append(f"{Author}/{Model}/{MODELS[Author][Model]}")
+                            print(DARK_GREY + f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: {Author}/{Model}/{MODELS[Author][Model]}] " + NORMAL + "Updating the model...")
+                            Delete(Author, Model, MODELS[Author][Model])
+                            Response = requests.get(f'https://huggingface.co/{Author}/{Model}/resolve/main/{MODELS[Author][Model]}/{LatestModel}?download=true', stream=True)
+                            with open(os.path.join(f"{PATH}{Author}/{Model}/{MODELS[Author][Model]}", f"{LatestModel}"), "wb") as ModelFile:
                                 ChunkSize = 1024
                                 for Data in Response.iter_content(chunk_size=ChunkSize):
                                     ModelFile.write(Data)
-                            print(DARK_GREY + f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: {Author}/{Model}] " + NORMAL + "Successfully updated the model!")
-                            UPDATING.remove(f"{Author}/{Model}")
+                            print(DARK_GREY + f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: {Author}/{Model}/{MODELS[Author][Model]}] " + NORMAL + "Successfully updated the model!")
+                            UPDATING.remove(f"{Author}/{Model}/{MODELS[Author][Model]}")
                         else:
-                            print(DARK_GREY + f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: {Author}/{Model}] " + NORMAL + "No model updates available!")
+                            print(DARK_GREY + f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: {Author}/{Model}/{MODELS[Author][Model]}] " + NORMAL + "No model updates available!")
         except:
             print(RED + "Models - Error in function RunThread:" + NORMAL)
             traceback.print_exc()
         time.sleep(UPDATE_CHECK_RATE_HOURS * 3600)
 
 
-async def LimitedStreamer(file_path: str, chunk_size: int, speed_limit_kbps: float):
-    delay = chunk_size / (speed_limit_kbps * 1024)
-    with open(file_path, "rb") as file:
-        while chunk := file.read(chunk_size):
-            yield chunk
-            await asyncio.sleep(delay)
+async def LimitedStreamer(FilePath, ChunkSize, SpeedLimitKbps: float):
+    Delay = ChunkSize / (SpeedLimitKbps * 1024)
+    with open(FilePath, "rb") as File:
+        while Chunk := File.read(ChunkSize):
+            yield Chunk
+            await asyncio.sleep(Delay)
 
 
-def IsAvailable(Author, Model):
+def IsAvailable(Author, Model, Folder):
     try:
-        if os.path.exists(f'./models/{Author}/{Model}') and os.listdir(f'./models/{Author}/{Model}') != [] and f"{Author}/{Model}" not in str(UPDATING):
+        if os.path.exists(f'./models/{Author}/{Model}/{Folder}') and os.listdir(f'./models/{Author}/{Model}/{Folder}') != [] and f"{Author}/{Model}/{Folder}" not in str(UPDATING):
             return True
         else:
             return False
@@ -101,10 +102,10 @@ def IsAvailable(Author, Model):
         print(RED + "Models - Error in function IsAvailable." + NORMAL)
 
 
-def GetSize(Author, Model):
+def GetSize(Author, Model, Folder):
     try:
-        if IsAvailable(Author, Model):
-            return os.path.getsize(f'./models/{Author}/{Model}/{GetName(Author, Model)}')
+        if IsAvailable(Author, Model, Folder):
+            return os.path.getsize(f'./models/{Author}/{Model}/{Folder}/{GetName(Author, Model, Folder)}')
         else:
             return None
     except:
@@ -112,19 +113,19 @@ def GetSize(Author, Model):
         traceback.print_exc()
 
 
-def FolderExists(Author, Model):
+def FolderExists(Author, Model, Folder):
     try:
-        if os.path.exists(f"{PATH}{Author}/{Model}") == False:
-            os.makedirs(f"{PATH}{Author}/{Model}")
+        if os.path.exists(f"{PATH}{Author}/{Model}/{Folder}") == False:
+            os.makedirs(f"{PATH}{Author}/{Model}/{Folder}")
     except:
         print(RED + "Models - Error in function FolderExists." + NORMAL)
         traceback.print_exc()
 
 
-def GetName(Author, Model):
+def GetName(Author, Model, Folder):
     try:
-        FolderExists(Author, Model)
-        for File in os.listdir(f"{PATH}{Author}/{Model}"):
+        FolderExists(Author, Model, Folder)
+        for File in os.listdir(f"{PATH}{Author}/{Model}/{Folder}"):
             if File.endswith(".pt"):
                 return File
         return None
@@ -133,12 +134,12 @@ def GetName(Author, Model):
         traceback.print_exc()
 
 
-def Delete(Author, Model):
+def Delete(Author, Model, Folder):
     try:
-        FolderExists(Author, Model)
-        for File in os.listdir(f"{PATH}{Author}/{Model}"):
+        FolderExists(Author, Model, Folder)
+        for File in os.listdir(f"{PATH}{Author}/{Model}/{Folder}"):
             if File.endswith(".pt"):
-                os.remove(os.path.join(f"{PATH}{Author}/{Model}", File))
+                os.remove(os.path.join(f"{PATH}{Author}/{Model}/{Folder}", File))
     except:
         print(RED + "Models - Error in function Delete." + NORMAL)
         traceback.print_exc()

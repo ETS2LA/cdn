@@ -87,7 +87,7 @@ def return_model(author: str, model: str, folder: str):
 def return_model(author: str, model: str, folder: str):
     if models.IsAvailable(author, model, folder):
         content_length = str(models.GetSize(author, model, folder))
-        file_path = f'./models/{author}/{model}/{models.GetName(author, model, folder)}'
+        file_path = f'./models/{author}/{model}/{folder}/{models.GetName(author, model, folder)}'
         return StreamingResponse(models.LimitedStreamer(FilePath=file_path, ChunkSize=1024, SpeedLimitKbps=100), media_type="application/octet-stream", headers={"content-length": content_length})
     else:
         return {'error': 'Model or author not found.'}

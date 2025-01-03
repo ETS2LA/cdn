@@ -1,11 +1,14 @@
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile, File
+import translations
 import datasets
+import asyncio
 import fastapi
 import uvicorn
 import models
 
+translations.Start()
 datasets.Start()
 models.Start()
 
@@ -25,6 +28,24 @@ app.add_middleware(
 @app.get("/")
 async def root():
     return HTMLResponse(content="<p>Hi! I don't know why you're here, but if you are looking for the source then check out the <a href='https://github.com/ETS2LA/cdn'>github repository</a>.</p>")
+
+async def LimitedStreamer(FilePath, ChunkSize, SpeedLimitKbps: float):
+    Delay = ChunkSize / (SpeedLimitKbps * 1024)
+    with open(FilePath, "rb") as File:
+        while Chunk := File.read(ChunkSize):
+            yield Chunk
+            await asyncio.sleep(Delay)
+
+# MARK: Translations
+
+@app.get('/translations')
+async def return_translations():
+    if translations.IsAvailable():
+        content_length = str(translations.GetSize())
+        file_path = f'./translations/translations.zip'
+        return StreamingResponse(LimitedStreamer(FilePath=file_path, ChunkSize=1024, SpeedLimitKbps=100), media_type="application/octet-stream", headers={"content-length": content_length})
+    else:
+        return {'error': 'Translations on the server are currently being updated.'}
 
 # MARK: Datasets
 
@@ -88,7 +109,7 @@ def return_model(author: str, model: str, folder: str):
     if models.IsAvailable(author, model, folder):
         content_length = str(models.GetSize(author, model, folder))
         file_path = f'./models/{author}/{model}/{folder}/{models.GetName(author, model, folder)}'
-        return StreamingResponse(models.LimitedStreamer(FilePath=file_path, ChunkSize=1024, SpeedLimitKbps=100), media_type="application/octet-stream", headers={"content-length": content_length})
+        return StreamingResponse(LimitedStreamer(FilePath=file_path, ChunkSize=1024, SpeedLimitKbps=100), media_type="application/octet-stream", headers={"content-length": content_length})
     else:
         return {'error': 'Model or author not found.'}
 

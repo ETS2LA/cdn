@@ -3,7 +3,6 @@ import threading
 import traceback
 import datetime
 import requests
-import asyncio
 import time
 import os
 
@@ -84,14 +83,6 @@ def RunThread():
         time.sleep(UPDATE_CHECK_RATE_HOURS * 3600)
 
 
-async def LimitedStreamer(FilePath, ChunkSize, SpeedLimitKbps: float):
-    Delay = ChunkSize / (SpeedLimitKbps * 1024)
-    with open(FilePath, "rb") as File:
-        while Chunk := File.read(ChunkSize):
-            yield Chunk
-            await asyncio.sleep(Delay)
-
-
 def IsAvailable(Author, Model, Folder):
     try:
         if os.path.exists(f'./models/{Author}/{Model}/{Folder}') and os.listdir(f'./models/{Author}/{Model}/{Folder}') != [] and f"{Author}/{Model}/{Folder}" not in str(UPDATING):
@@ -107,7 +98,7 @@ def GetSize(Author, Model, Folder):
         if IsAvailable(Author, Model, Folder):
             return os.path.getsize(f'./models/{Author}/{Model}/{Folder}/{GetName(Author, Model, Folder)}')
         else:
-            return None
+            return 1
     except:
         print(RED + "Models - Error in function GetSize." + NORMAL)
         traceback.print_exc()

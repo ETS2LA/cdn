@@ -12,9 +12,8 @@ translations.Start()
 datasets.Start()
 models.Start()
 
-
 DEVELOPMENT = False
-
+SPEEDLIMIT = 5000 # 5mb/s
 
 app = fastapi.FastAPI()
 app.add_middleware(
@@ -43,7 +42,7 @@ async def return_translations():
     if translations.IsAvailable():
         content_length = str(translations.GetSize())
         file_path = f'./translations/translations.zip'
-        return StreamingResponse(LimitedStreamer(FilePath=file_path, ChunkSize=1024, SpeedLimitKbps=100), media_type="application/octet-stream", headers={"content-length": content_length})
+        return StreamingResponse(LimitedStreamer(FilePath=file_path, ChunkSize=1024, SPEEDLIMIT), media_type="application/octet-stream", headers={"content-length": content_length})
     else:
         return {'error': 'Translations on the server are currently being updated.'}
 
@@ -109,7 +108,7 @@ def return_model(author: str, model: str, folder: str):
     if models.IsAvailable(author, model, folder):
         content_length = str(models.GetSize(author, model, folder))
         file_path = f'./models/{author}/{model}/{folder}/{models.GetName(author, model, folder)}'
-        return StreamingResponse(LimitedStreamer(FilePath=file_path, ChunkSize=1024, SpeedLimitKbps=100), media_type="application/octet-stream", headers={"content-length": content_length})
+        return StreamingResponse(LimitedStreamer(FilePath=file_path, ChunkSize=1024, SPEEDLIMIT), media_type="application/octet-stream", headers={"content-length": content_length})
     else:
         return {'error': 'Model or author not found.'}
 

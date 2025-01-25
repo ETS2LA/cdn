@@ -89,19 +89,20 @@ async def get_dataset_id(author: str, dataset: str, id):
 
 # MARK: Models
 
-@app.get('/models/{author}/{model}/{folder}')
-def return_model(author: str, model: str, folder: str):
-    if models.IsAvailable(author, model, folder):
-        return {'success': models.GetName(author, model, folder)}
-    else:
-        return {'error': 'Model or author not found.'}
-
-@app.get('/models/{author}/{model}/{folder}/download')
+@app.get('/models/{author}/{model}/{folder:path}/download')
 def return_model(author: str, model: str, folder: str):
     if models.IsAvailable(author, model, folder):
         content_length = str(models.GetSize(author, model, folder))
         file_path = f'./models/{author}/{model}/{folder}/{models.GetName(author, model, folder)}'
         return FileResponse(path=file_path, media_type="application/octet-stream", headers={"content-length": content_length})
+    else:
+        return {'error': 'Model or author not found.'}
+
+@app.get('/models/{author}/{model}/{folder:path}')
+def return_model(author: str, model: str, folder: str):
+    print(folder)
+    if models.IsAvailable(author, model, folder):
+        return {'success': models.GetName(author, model, folder)}
     else:
         return {'error': 'Model or author not found.'}
 

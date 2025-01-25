@@ -18,7 +18,8 @@ MODELS = {
         "End-To-End": "model",
         "NavigationDetectionAI": "model",
         "TrafficLightDetectionAI": "model",
-        "RouteAdvisorClassification": "model"
+        "RouteAdvisorClassification": "model",
+        "MLVSS": "models/mapping"
     }
 }
 

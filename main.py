@@ -56,14 +56,6 @@ def read_dataset_details(author: str, dataset: str):
         return {'error': 'Dataset or author not found.'}
 
 
-@app.get('/datasets/{author}/{dataset}/download')
-async def read_dataset(author: str, dataset: str):
-    if datasets.IsAvailable(author, dataset):
-        return datasets.GetDataset(author, dataset)
-    else:
-        return {'error': 'Dataset or author not found.'}
-
-
 @app.get('/datasets/{author}/{dataset}/get-id')
 def get_dataset_id(author: str, dataset: str):
     if datasets.IsAvailable(author, dataset):

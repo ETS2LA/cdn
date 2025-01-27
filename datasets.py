@@ -1,10 +1,11 @@
+import threading
 import traceback
 import datetime
 import fastapi
-import zipfile
 import random
 import string
 import json
+import time
 import os
 
 
@@ -21,6 +22,8 @@ DATASETS = {
 
 PATH = "./datasets"
 
+MAX_STORAGE_SIZE = 30 * 1024 * 1024 * 1024 # 30GB
+
 
 def Start():
     global PATH
@@ -31,6 +34,7 @@ def Start():
         for Dataset in DATASETS[Author]:
             FolderExists(Author, Dataset)
             FolderExists(Author, f"{Dataset}#IDs")
+    threading.Thread(target=CheckUsedStorageThread, daemon=True).start()
 
 
 def IsAvailable(Author, Dataset):
@@ -73,24 +77,10 @@ def GetDatasetFile(Author, Dataset, File):
         return {"error": "File, dataset or author not found."}
 
 
-def GetDataset(Author, Dataset):
-    try:
-        if os.path.exists(f"{PATH}{Author}/{Dataset}"):
-            with zipfile.ZipFile(f"{PATH}{Dataset}.zip", "w") as zip:
-                for File in os.listdir(f"{PATH}{Author}/{Dataset}"):
-                    if File.endswith(".png") or File.endswith(".jpg") or File.endswith(".jpeg") or File.endswith(".txt") or File.endswith(".json"):
-                        zip.write(f"{PATH}{Author}/{Dataset}/{File}", File)
-            return fastapi.responses.FileResponse(path=f"{PATH}{Dataset}.zip", filename=f"{Author} - {Dataset} - {datetime.datetime.now().strftime('%d.%m.%Y %H-%M-%S')}.zip")
-        else:
-            return {"error": "Dataset or author not found."}
-    except:
-        print(RED + "Datasets - Error in function GetDataset." + NORMAL)
-        traceback.print_exc()
-        return {"error": "Dataset or author not found."}
-
-
 def GetID(Author, Dataset):
     try:
+        if EnoughStorageLeft() == False:
+            return {"error": "Server storage is full."}
         if os.path.exists(f"{PATH}{Author}/{Dataset}"):
             PossibleCharacters = str(string.ascii_letters + string.digits + "-_")
             ID = str("".join(random.choices(PossibleCharacters, k=15)))
@@ -139,6 +129,8 @@ def DeleteByID(Author, Dataset, ID):
 
 def Upload(Author, Dataset, ID, Files):
     try:
+        if EnoughStorageLeft() == False:
+            return {"error": "Server storage is full."}
         if os.path.exists(f"{PATH}{Author}/{Dataset}"):
             for File in Files:
                 with open(f"{PATH}{Author}/{Dataset}#IDs/{ID}.txt", "a") as F:
@@ -168,4 +160,42 @@ def FolderExists(Author, Dataset):
             os.makedirs(f"{PATH}{Author}/{Dataset}")
     except:
         print(RED + "Datasets - Error in function FolderExists." + NORMAL)
+        traceback.print_exc()
+
+
+def EnoughStorageLeft():
+    try:
+        return StorageUsed < MAX_STORAGE_SIZE
+    except:
+        print(RED + "Datasets - Error in function EnoughStorageLeft." + NORMAL)
+        traceback.print_exc()
+        return False
+
+
+def CheckUsedStorageThread():
+    try:
+        global StorageUsed
+        LastFiles = ""
+        for Author in os.listdir(PATH):
+            for Dataset in os.listdir(f"{PATH}{Author}"):
+                LastFiles += f"#{len(os.listdir(f'{PATH}{Author}/{Dataset}'))}"
+        while True:
+            while True:
+                time.sleep(60)
+                Files = ""
+                for Author in os.listdir(PATH):
+                    for Dataset in os.listdir(f"{PATH}{Author}"):
+                        Files += f"#{len(os.listdir(f'{PATH}{Author}/{Dataset}'))}"
+                if Files != LastFiles:
+                    LastFiles = Files
+                    break
+            TempStorageUsed = 0
+            for Author in os.listdir(PATH):
+                for Dataset in os.listdir(f"{PATH}{Author}"):
+                    if os.path.exists(f"{PATH}{Author}/{Dataset}"):
+                        for File in os.listdir(f"{PATH}{Author}/{Dataset}"):
+                            TempStorageUsed += os.path.getsize(f"{PATH}{Author}/{Dataset}/{File}")
+            StorageUsed = TempStorageUsed
+    except:
+        print(RED + "Datasets - Error in function CheckAvailableStorageSize." + NORMAL)
         traceback.print_exc()

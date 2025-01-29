@@ -41,6 +41,8 @@ def Start():
             if os.path.exists(f"{PATH}{Author}/{Dataset}"):
                 for File in os.listdir(f"{PATH}{Author}/{Dataset}"):
                     StorageUsed += os.path.getsize(f"{PATH}{Author}/{Dataset}/{File}")
+    if StorageUsed > MAX_STORAGE_SIZE:
+        ClearStorage()
     threading.Thread(target=CheckUsedStorageThread, daemon=True).start()
 
 

@@ -22,7 +22,7 @@ DATASETS = {
 
 PATH = "./datasets"
 
-MAX_STORAGE_SIZE = 30 * 1024 * 1024 * 1024 # 30GB
+MAX_STORAGE_SIZE = 25 * 1000 * 1000 * 1000 # 25GB
 
 
 def Start():
@@ -34,6 +34,13 @@ def Start():
         for Dataset in DATASETS[Author]:
             FolderExists(Author, Dataset)
             FolderExists(Author, f"{Dataset}#IDs")
+    global StorageUsed
+    StorageUsed = 0
+    for Author in os.listdir(PATH):
+        for Dataset in os.listdir(f"{PATH}{Author}"):
+            if os.path.exists(f"{PATH}{Author}/{Dataset}"):
+                for File in os.listdir(f"{PATH}{Author}/{Dataset}"):
+                    StorageUsed += os.path.getsize(f"{PATH}{Author}/{Dataset}/{File}")
     threading.Thread(target=CheckUsedStorageThread, daemon=True).start()
 
 
@@ -172,20 +179,64 @@ def EnoughStorageLeft():
         return False
 
 
+def ClearStorage():
+    try:
+        def ClearStorageThread():
+            try:
+                global StorageUsed
+                AllFiles = []
+                for Author in os.listdir(PATH):
+                    for Dataset in os.listdir(f"{PATH}{Author}"):
+                        if os.path.exists(f"{PATH}{Author}/{Dataset}") and "#IDs" not in Dataset:
+                            for File in os.listdir(f"{PATH}{Author}/{Dataset}"):
+                                if File.endswith(".png") or File.endswith(".jpg") or File.endswith(".jpeg"):
+                                    AllFiles.append([f"{PATH}{Author}/{Dataset}/{File}", os.path.getsize(f"{PATH}{Author}/{Dataset}/{File}"), os.path.getmtime(f"{PATH}{Author}/{Dataset}/{File}")])
+                AllFiles.sort(key=lambda x: x[2], reverse=True)
+                for File in AllFiles:
+                    Path, Size, Time = File
+                    if StorageUsed - Size > MAX_STORAGE_SIZE:
+                        Success = True
+                        try:
+                            if os.path.exists(Path):
+                                os.remove(Path)
+                        except: Success = False
+                        try: 
+                            if os.path.exists(Path.replace(".png", ".txt").replace(".jpg", ".txt").replace(".jpeg", ".txt")):
+                                os.remove(Path.replace(".png", ".txt").replace(".jpg", ".txt").replace(".jpeg", ".txt"))
+                        except: Success = False
+                        try:
+                            if os.path.exists(Path.replace(".png", ".json").replace(".jpg", ".json").replace(".jpeg", ".json")):
+                                os.remove(Path.replace(".png", ".json").replace(".jpg", ".json").replace(".jpeg", ".json"))
+                        except: Success = False
+                        if Success:
+                            StorageUsed -= Size
+                    else:
+                        break
+            except:
+                print(RED + "Datasets - Error in function ClearStorageThread." + NORMAL)
+                traceback.print_exc()
+        threading.Thread(target=ClearStorageThread, daemon=True).start()
+    except:
+        print(RED + "Datasets - Error in function ClearStorage." + NORMAL)
+        traceback.print_exc()
+
+
 def CheckUsedStorageThread():
     try:
         global StorageUsed
         LastFiles = ""
         for Author in os.listdir(PATH):
             for Dataset in os.listdir(f"{PATH}{Author}"):
-                LastFiles += f"#{len(os.listdir(f'{PATH}{Author}/{Dataset}'))}"
+                if os.path.exists(f"{PATH}{Author}/{Dataset}"):
+                    LastFiles += f"#{len(os.listdir(f'{PATH}{Author}/{Dataset}'))}"
         while True:
             while True:
                 time.sleep(60)
                 Files = ""
                 for Author in os.listdir(PATH):
                     for Dataset in os.listdir(f"{PATH}{Author}"):
-                        Files += f"#{len(os.listdir(f'{PATH}{Author}/{Dataset}'))}"
+                        if os.path.exists(f"{PATH}{Author}/{Dataset}"):
+                            Files += f"#{len(os.listdir(f'{PATH}{Author}/{Dataset}'))}"
                 if Files != LastFiles:
                     LastFiles = Files
                     break
@@ -196,6 +247,8 @@ def CheckUsedStorageThread():
                         for File in os.listdir(f"{PATH}{Author}/{Dataset}"):
                             TempStorageUsed += os.path.getsize(f"{PATH}{Author}/{Dataset}/{File}")
             StorageUsed = TempStorageUsed
+            if StorageUsed > MAX_STORAGE_SIZE:
+                ClearStorage()
     except:
         print(RED + "Datasets - Error in function CheckAvailableStorageSize." + NORMAL)
         traceback.print_exc()

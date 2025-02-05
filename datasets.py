@@ -141,6 +141,12 @@ def Upload(Author, Dataset, ID, Files):
         if EnoughStorageLeft() == False:
             return {"error": "Server storage is full."}
         if os.path.exists(f"{PATH}{Author}/{Dataset}"):
+            Exists = False
+            for File in Files:
+                if os.path.exists(f"{PATH}{Author}/{Dataset}/{File.filename}"):
+                    Exists = True
+            if Exists:
+                return {"error": "File already exists."}
             for File in Files:
                 with open(f"{PATH}{Author}/{Dataset}#IDs/{ID}.txt", "a") as F:
                     F.write(File.filename + ";")

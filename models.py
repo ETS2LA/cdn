@@ -14,7 +14,7 @@ NORMAL = "\033[0m"
 
 # MODELS = {Huggingface User: {Repository: Folder which contains the model file}}
 MODELS = {
-    "Glas42": {
+    "OleFranz": {
         "End-To-End": "model",
         "NavigationDetectionAI": "model",
         "TrafficLightDetectionAI": "model",

@@ -15,7 +15,7 @@ NORMAL = "\033[0m"
 
 
 DATASETS = {
-    "Glas42": {
+    "OleFranz": {
         "End-To-End"
     }
 }

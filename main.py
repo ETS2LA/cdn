@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile, File
 import translations
 import datasets
+import frontend
 import asyncio
 import fastapi
 import uvicorn
@@ -10,6 +11,7 @@ import models
 
 translations.Start()
 datasets.Start()
+frontend.Start()
 models.Start()
 
 DEVELOPMENT = False
@@ -38,6 +40,17 @@ async def return_translations():
         return FileResponse(path=file_path, media_type="application/octet-stream", headers={"content-length": content_length})
     else:
         return {'error': 'Translations on the server are currently being updated.'}
+
+# MARK: UI
+
+@app.get('/frontend')
+async def return_frontend():
+    if frontend.IsAvailable():
+        content_length = str(frontend.GetSize())
+        file_path = f'./frontend/frontend.zip'
+        return FileResponse(path=file_path, media_type="application/octet-stream", headers={"content-length": content_length})
+    else:
+        return {'error': 'Frontend on the server is currently being updated.'}
 
 # MARK: Datasets
 

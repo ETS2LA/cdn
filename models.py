@@ -19,7 +19,8 @@ MODELS = {
         "NavigationDetectionAI": "model",
         "TrafficLightDetectionAI": "model",
         "RouteAdvisorClassification": "model",
-        "MLVSS": "models/mapping"
+        "MLVSS": "models/mapping",
+        "AdaptiveCruiseControl": "model"
     }
 }
 
